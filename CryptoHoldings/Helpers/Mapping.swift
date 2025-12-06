@@ -6,7 +6,7 @@ func makeDTOs(from holdings: [Holding], currentPrice: (String) ->(Double, Date)?
         guard let symbol = h.symbol, let buyAt = h.buyAt else { return nil }
         let cur = currentPrice(symbol)
         return HoldingDTO(symbol: symbol,
-                          buyPrices: h.buyPrice,
+                          buyPrice: h.buyPrice,
                           buyAtISO: HoldingDTO.iso(buyAt),
                           currentPrice: cur?.0,
                           currentAtISO: cur.map { HoldingDTO.iso($0.1) },
