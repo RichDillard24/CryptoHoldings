@@ -1,8 +1,5 @@
 import Foundation
 
-
-
-
 protocol PricesAPI {
     func price(for symbol: String) async throws -> Double
     func prices(for symbols: [String]) async throws -> [String: Double]
@@ -68,20 +65,20 @@ struct Quote: Decodable {
     }
 }
 struct FreeCryptoAPI: PricesAPI{
-    let baseURL = URL(string: "https://api.freecryptoapi.com ")!
+    let baseURL = URL(string: "https://api.freecryptoapi.com")!
     private let path = "/v1/getData"
     
     private var token: String {
-        Bundle.main.infoDictionary?["FREECYPTO_API_KEY"] as? String ?? ""
+        Bundle.main.infoDictionary?["FREECRYPTO_API_KEY"] as? String ?? ""
     }
     
     func prices(for symbols: [String]) async throws -> [String: Double]{
         
-        let joined = symbols.map {$0.uppercased() }.joined(separator: " & ")
+        let joined = symbols.map {$0.uppercased() }.joined(separator: "&")
         
         var comps = URLComponents(url: baseURL.appendingPathComponent(path),
                                   resolvingAgainstBaseURL: false)!
-        comps.queryItems = [URLQueryItem(name: "symbol ", value: joined) ]
+        comps.queryItems = [URLQueryItem(name: "symbol", value: joined) ]
         let url = comps.url!
         
         var req = URLRequest(url: url)

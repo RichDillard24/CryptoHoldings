@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreData
+import UniformTypeIdentifiers
 
 struct HoldingsListView: View {
     @EnvironmentObject private var vm: CryptoVM
@@ -26,7 +27,7 @@ struct HoldingsListView: View {
                             .contentShape(Rectangle())
                             .onTapGesture { editing = h; showEditor = true}
                     }
-                    .onDelete(perform: .deleteItems)
+                    .onDelete(perform: deleteItems)
                 } header: {
                     HStack{
                         Text("Your Holdings")
@@ -39,31 +40,50 @@ struct HoldingsListView: View {
                     }
                 }
             }
-            .overlay{
-                switch vm.state {
-                case .loading:
-                    ProgressView().controlSize(.large)
-                case .failed(let msg):
-                    VStack(spacing: 8){
-                        Text("Network Error").bold()
-                        Text(msg).font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
-                        Button("Retry") { Task { await vm.refreshAll() } }
-                    }
-                    .padding().background(.ultraThinMaterial).clipShap(RoundedRectangle(cornerRadius: 12))
-                default: EmptyView()
-                }
-            }
+            .overlay(overlayView)
+//                switch vm.state {
+//                case .loading:
+//                    ProgressView().controlSize(.medium)
+//                case .failed(let msg):
+//                    VStack(spacing: 8){
+//                        Text("Network Error").bold()
+//                        Text(msg).font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+//                        Button("Retry") { Task { await vm.refreshAll() } }
+//                    }
+//                    .padding().background(.ultraThinMaterial).clipShape(RoundedRectangle(cornerRadius: 12))
+//                default: EmptyView()
+                
+            
             .navigationTitle("Crypto Tracker")
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button { editing = nil; showEditor = true} label: { Image(systemName: "plus.circle.fill") }
-                    Button { export() } label: { Image(systemName: "square.and.arrow.up") }
-                    Button { isImporting = true } label: { Image(systemName: "square.and.arrow.down") }
+                    Button {
+                        editing = nil;
+                        showEditor = true
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                    }
+                    Button {
+                        export()
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                    Button {
+                        isImporting = true
+                    } label: {
+                        Image(systemName: "square.and.arrow.down")
+                    }
                 }
             }
-            .fileExporter(isPresented: $isExporting, document: exportDoc, contentType: .json, defaultFilename:
-                            "holdings.json") { result in
-                if case .failure(let err) = result { alertMessage = "Failed to Export: \(err.localizedDescription)"}
+            .fileExporter(
+                isPresented: $isExporting,
+                document: exportDoc,
+                contentType: .json,
+                defaultFilename: "holdings.json"
+            ) { result in
+                if case .failure(let err) = result {
+                    alertMessage = "Failed to Export: \(err.localizedDescription)"
+                }
             }
             .fileImporter(isPresented: $isImporting, allowedContentTypes: [.json]) { result in
                 do{
@@ -81,10 +101,30 @@ struct HoldingsListView: View {
             }
             .alert("Notice", isPresented: .constant(alertMessage != nil)) {
                 Button("Ok") { alertMessage = nil }
-            } message: { Text(alertMessage ?? "")}
+            } message: {
+                Text(alertMessage ?? "")
+            }
         }
     }
-    private func deletItems(at offsets: IndexSet) {
+
+        
+    @ViewBuilder
+    private var overlayView: some View {
+        switch vm.state {
+        case .loading:
+            ProgressView().controlSize(.large)
+        case .failed(let msg):
+            VStack(spacing: 8){
+                Text("Network Error").bold()
+                Text(msg).font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                Button("Retry") { Task { await vm.refreshAll() } }
+            }
+            .padding().background(.ultraThinMaterial).clipShape(RoundedRectangle(cornerRadius: 12))
+        default: EmptyView()
+        }
+    }
+
+    private func deleteItems(at offsets: IndexSet) {
         offsets.map { holdings[$0] }.forEach(ctx.delete)
         try? ctx.save()
     }
@@ -99,6 +139,8 @@ struct HoldingsListView: View {
         try ctx.save()
     }
 }
+
+
 
 struct HoldingRow: View {
     let h: Holding
