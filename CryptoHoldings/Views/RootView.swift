@@ -14,6 +14,7 @@ struct RootView: View {
                 .environmentObject(vm)
         }
         .task { vm.startRefreshLoop() }
+        .onAppear{Task{await vm.refreshAll()}}
         .onDisappear { vm.stopRefreshLoop() }
     }
 }

@@ -20,41 +20,37 @@ struct HoldingsListView: View {
     
     var body: some View {
         NavigationStack {
-            List{
-                Section{
-                    ForEach(holdings) { h in
-                        HoldingRow(h: h, pricePair: vm.price(for: h.symbol ?? ""))
-                            .contentShape(Rectangle())
-                            .onTapGesture { editing = h; showEditor = true}
-                    }
-                    .onDelete(perform: deleteItems)
-                } header: {
-                    HStack{
-                        Text("Your Holdings")
-                        Spacer()
-                        if let ts = vm.lastUpdated {
-                            Text(ts, style: .time)
-                                .font(.footnote)
+            List {
+                            // Holdings saved in CoreData
+        Section("Your Holdings") {
+            ForEach(holdings) { h in
+                HoldingRow(h: h, pricePair: vm.price(for: h.symbol ?? ""))
+            }
+            .onDelete(perform: deleteItems)
+        }
+// Watchlist from vm.symbols
+            Section("Watchlist Prices") {
+                ForEach(vm.symbols, id: \.self) { s in
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(s).font(.headline)
+                        
+                        if let pair = vm.price(for: s) {
+                            Text("Current: $\(String(format: "%.2f", pair.0))")
+                            Text("Updated: \(pair.1.formatted())")
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
+                        } else {
+                            Text("No price available")
+                                .foregroundStyle(.tertiary)
                         }
                     }
+                    .padding(.vertical, 4)
                 }
             }
+        }
             .overlay(overlayView)
-//                switch vm.state {
-//                case .loading:
-//                    ProgressView().controlSize(.medium)
-//                case .failed(let msg):
-//                    VStack(spacing: 8){
-//                        Text("Network Error").bold()
-//                        Text(msg).font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
-//                        Button("Retry") { Task { await vm.refreshAll() } }
-//                    }
-//                    .padding().background(.ultraThinMaterial).clipShape(RoundedRectangle(cornerRadius: 12))
-//                default: EmptyView()
-                
-            
             .navigationTitle("Crypto Tracker")
+            .onAppear{Task{await vm.refreshAll()}}
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {
@@ -149,29 +145,50 @@ struct HoldingRow: View {
     var body: some View {
         HStack( spacing: 4) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(h.symbol ?? "--").font(.headline)
-                if let note = h.note, !note.isEmpty {
-                    Text(note).font(.footnote).foregroundStyle(.secondary).lineLimit(1)
-                }
+                
+                Text(h.symbol ?? "--")
+                    .font(.headline)
+                
+                Text("Buy Price: $\(String(format: "%.2f", h.buyPrice))")
+                    .font(.subheadline)
+                
                 if let dt = h.buyAt {
-                    Text(dt, style: .date).font(.caption).foregroundStyle(.tertiary)
+                    Text("Buy Date: \(dt.formatted())")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+                
+                if let note = h.note, !note.isEmpty {
+                        Text("note: \(note)")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
             }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 4) {
+            
                 if let pair = pricePair {
                     let cur = pair.0
                     let delta = cur - h.buyPrice
                     let pct = h.buyPrice != 0 ? (delta / h.buyPrice) * 100 : 0
-                    Text(String(format: "$%.2f", cur)).font(.body).monospacedDigit()
+                    
+                    Text("Current: $\(String(format: "%.2f", cur))")
+                        .font(.body)
+                        .monospacedDigit()
+                    
+                    Text("Updated: \(pair.1.formatted())")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    
                     Text(String(format: "%+.2f (%+.2f%%)", delta, pct))
                         .font(.footnote).monospacedDigit()
                         .foregroundStyle(delta >= 0 ? .green : .red)
                 } else {
-                    Text("--").foregroundStyle(.tertiary)
+                    Text("No Current Price")
+                        .foregroundStyle(.tertiary)
                 }
             }
+            .padding(.vertical, 4)
         }
-        .padding(.vertical, 4)
+        
     }
-}
+

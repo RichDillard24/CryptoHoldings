@@ -74,7 +74,7 @@ struct FreeCryptoAPI: PricesAPI{
     
     func prices(for symbols: [String]) async throws -> [String: Double]{
         
-        let joined = symbols.map {$0.uppercased() }.joined(separator: "&")
+        let joined = symbols.map {$0.uppercased() }.joined(separator: " & ")
         
         var comps = URLComponents(url: baseURL.appendingPathComponent(path),
                                   resolvingAgainstBaseURL: false)!

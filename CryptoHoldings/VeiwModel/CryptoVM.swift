@@ -31,12 +31,12 @@ final class CryptoVM: ObservableObject {
         return error.localizedDescription
     }
     func loadWatchlist() {
-        let raw = UserDefaults.standard.array(forKey: "watchlistsymbols") as? [String] ?? ["BTC", "ETH"]
+        let raw = UserDefaults.standard.array(forKey: "watchlistsymbols") as? [String] ?? ["BTC", "ETH", "SOL", "LTC"]
         symbols = Array(raw.prefix(4))
     }
     func saveWatchlist() {
         let limited: [String] = Array(symbols.prefix(4))
-        UserDefaults.standard.set(limited, forKey: "wathlistsymbols")
+        UserDefaults.standard.set(limited, forKey: "wacthlistsymbols")
     }
     
     func startRefreshLoop(intervalSec: Int = 15) {
@@ -61,6 +61,7 @@ final class CryptoVM: ObservableObject {
             for (s,p) in dict { await cache.set(s, price: p) }
             self.livePrices = await cache.snapshot()
             self.lastUpdated = Date()
+            self.state = .loaded
         } catch {
             self.state = .failed(error.localizedDescription)
         }
@@ -78,7 +79,9 @@ final class CryptoVM: ObservableObject {
         }
         throw last!
     }
-    func price(for symbol: String) -> (Double, Date)? { livePrices[symbol] }
+    func price(for symbol: String) -> (Double, Date)? {
+        livePrices[symbol.uppercased()]
+    }
 }
     actor PricesCache {
         private var map: [String: (Double, Date)] = [:]
